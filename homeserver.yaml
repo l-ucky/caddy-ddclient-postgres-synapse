@@ -1,0 +1,166 @@
+## Installing Matrix
+
+## I used the Arch User Repository version of the synapse server.
+
+## Two important calls for `synapse_homeserver`:
+##    1. `killall synapse_homeserver`
+##    2. `synapse_homeserver -c /etc/synapse/homeserver.yaml -D`
+
+## The first call means to kill the Synapse server.
+
+##The second call means to use the config (-c) at the specified directory, and run as daemon (-D).
+
+## Any time you change configurations, kill and start in this fashion.
+
+## After installing, go to `/etc/synapse/homeserver.yaml` and paste this file
+
+```
+########################### STANDARD NOTES ######################################
+# Configuration file for Synapse.
+#
+# This is a YAML file: see [1] for a quick introduction. Note in particular
+# that *indentation is important*: all the elements of a list or dictionary
+# should have the same indentation.
+#
+# [1] https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html
+#
+# For more information on how to configure Synapse, including a complete accounting of
+# each option, go to docs/usage/configuration/config_documentation.md or
+# https://matrix-org.github.io/synapse/latest/usage/configuration/config_documentation.html
+########################### STANDARD NOTES ######################################
+
+server_name: "example.com"
+pid_file: /etc/homeserver.pid
+listeners:
+  - port: 8008
+    tls: false
+    type: http
+    x_forwarded: true
+    bind_addresses: ['::1', '127.0.0.1']
+    resources:
+      - names: [client, federation]
+        compress: false
+#  - port: 8448
+#    type: http         ### I ACTUALLY DIDNT NEED THIS ###
+#    tls: false
+#    resources:
+#      - names: [client, federation]
+#database:
+#  name: sqlite3
+#  args:
+#    database: /etc/homeserver.db
+database:
+  name: psycopg2
+  args:
+    user: synapse_user
+    password: [put in your password here]
+    database: synapse
+    host: localhost
+    port: 5432
+    cp_min: 5
+    cp_max: 10
+log_config: "/etc/synapse/example.com.log.config"
+media_store_path: /mnt/drive/synapse/media
+registration_shared_secret: "[THIS WILL AUTO GENERATE]"
+enable_registration: true
+registration_requires_token: true
+enable_registration_without_verification: false
+url_previews_enabled: true
+#url_preview_ip_range_blacklist:
+#  - '127.0.0.0/8'
+#  - '10.0.0.0/8'
+limit_remote_rooms:
+  enabled: true
+  complexity: 0.5
+  complexity_error: "Error: CPU_MELTER_DETECTED"
+  admins_can_join: false
+auto_join_rooms:
+  - "#any_room_name:[example.com]"
+serve_server_wellknown: true
+report_stats: false
+macaroon_secret_key: "[THIS WILL AUTO GENERATE]"
+form_secret: "[THIS WILL AUTO GENERATE]"
+signing_key_path: "/etc/synapse/example.com.signing.key"
+#trusted_key_servers:
+#  - server_name: "matrix.org"
+retention:
+    enabled: true
+    default_policy:
+        min_lifetime: 1d
+        max_lifetime: 4w
+    allowed_lifetime_min: 1d
+    allowed_lifetime_max: 5w
+    purge_jobs:
+    - longest_max_lifetime: 30d
+      interval: 7d
+    - shortest_max_lifetime: 3d
+      interval: 1d
+encryption_enabled_by_default_for_room_type: all
+redaction_retention_period: 1m
+user_ips_max_age: 1d
+
+
+########################### PERSONAL NOTES ######################################
+##### PostgreSQL Instructions: #####
+# 1A) You need to make a PostgreSQL database with the Synapse install instructions.
+# 1B) User = synapse, password = "what you want"
+# 1C) Data Directory for PostgreSQL is IMPORTANT. Go into PostgreSQL config and remap the data location to a large drive, NOT YOUR OPERATING SYSTEM DRIVE.
+# 1D) The standard port is 5432, but it can be changed. Keep on `localhost` as there is less attack area for PostgreSQL if it isn't exposed to the internet.
+# 1E) Make sure to prevent updates on postgres in your package manager config file. Major updates will bork the server (e.g. v14 -> v15)
+
+##### Running as Daemon, and Detecting Server in Browser: #####
+# 1) You don't need to touch the systemd [Service] thing like from some blog advice.
+# 2) Connection success with local numerical IP instead of using "localhost" for address.
+
+
+##### Namecheap, or other Registrar Instruction: #####
+#| _matrix-identity | _tcp | 0 | 10 | 443 | example.com |
+# Make "A+DDNS Records" in the namecheap Advanced DNS section for `matrix` `identity` and the normal `example.com` base
+
+
+##### DDCLIENT Instructions: #####
+# 1) Type in the config for ddclient to pick up the `matrix` `identity` and normal example.com (symbols = *,@) [EXAMPLE BELOW]
+# 2) Command `ddclient` in the CLI, it will run to pick up the `*, @, identity, matrix, www` information you put in the 
+##   ddclient configuration file.
+
+##### Misc Notes and Additions: #####
+# 1) Fix retention policies to be monthly cleaning.
+# 2) Added encryption for all newly made rooms
+# 3) Token and Standard "enable_registration" types.
+# 4) Type in the `serve_Server_wellknown`, Caddy will use this for federation. 
+#    You don't need to make any files, it's just automatic.
+# 5) Remove truste_key_server from the config because you don't need it.
+# 6) You don't need to blacklist IPs for URL preview, but do it if you have issues.
+# 7) You don't need port 8448 operating for Matrix to federate.
+# 8) Limited the room complexity to prevent CPU from melting (100% usage). At measurement 0.5 for complexity, 
+#    you can't join rooms with around 3,000 people or larger. I cannot find the boundaries or range of the room 
+#    participants correlating with the arbitrary complexity number. You can override your complexity filter to allow 
+#    admins to enter any room
+# 9A) Add registration token because you can leave registration enabled for inviting frens, but normies can't answer. 
+#     Just give your frens the token you generate from the `synapse_admin` package.
+# 9B) (link: https://github.com/Awesome-Technologies/synapse-admin), 
+#     I used the docker instructions since docker-compose is an easy deployment.
+# 10) Add custom retention time for redaction_retention_period to 1 minute
+# 11) Add custom retention time for user_ips_max_age to 1 day.
+# 12) Add auto-join the general chat.
+########################### PERSONAL NOTES ######################################
+
+```
+
+## The Caddyfile for Synapse to work with federation:
+## [NOTE]: Even though you're not using port 8448 for federation,
+##         and just 8008, you must put a reverse proxy into the Caddyfile 
+##         so when port 8448 requests come through, they can forward to the 
+##         port 8008 address as shown below.
+
+## [NOTE]: If you are setting something up for the first time, 
+##         port forward 443 and 80 on your router firewall, or virtual server (naming schemes vary), 
+##         no other ports need to be open for operation. Port 80 is for HTTP and port 443 is for HTTPS.
+
+## A reverse proxy works by monitoring the connections through the 443 and 80 ports, 
+## then redirects the requests to their configured destination which you typed in the Caddyfile config. 
+
+###################### See Caddyfile in repo ######################
+
+###################### See ddclient in repo #######################
+
