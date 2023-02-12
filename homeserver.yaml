@@ -145,7 +145,6 @@ user_ips_max_age: 1d
 # 12) Add auto-join the general chat.
 ########################### PERSONAL NOTES ######################################
 
-```
 
 ## The Caddyfile for Synapse to work with federation:
 ## [NOTE]: Even though you're not using port 8448 for federation,
