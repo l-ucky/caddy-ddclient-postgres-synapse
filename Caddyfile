@@ -17,7 +17,7 @@ admin off
 }
 
 [example.com]:8448 {
-  reverse_proxy http://192.168.0.4:8008
+  reverse_proxy http://[examplelocalhost_IP]:8008
 }
 
 matrix.[example.com] {
