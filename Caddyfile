@@ -1,0 +1,32 @@
+admin off
+}
+
+[example.com] {
+  reverse_proxy /_matrix/* http://localhost:8008
+  reverse_proxy /_synapse/client/* http://[localhost_IP]:8008
+  root * /var/www/public_html
+  header /.well-known/matrix/* Content-Type application/json
+  header /.well-known/matrix/* Access-Control-Allow-Origin *
+  respond /.well-known/matrix/server `{"m.server": "matrix.[example.com]:443"}`
+  respond /.well-known/matrix/client `{"m.homeserver":{"base_url":"https://matrix.[example.com]"},"m.identity_server":{"base_url":"https://identity.[example.com]"}}`
+  file_server browse
+  encode gzip
+  basicauth /[directory within /var/www/public_html]/* {
+  [user1] [hash from hashed-password caddy command]
+    	}
+}
+
+[example.com]:8448 {
+  reverse_proxy http://192.168.0.4:8008
+}
+
+matrix.[example.com] {
+    reverse_proxy /_matrix/* http://[localhost_IP]:8008
+    reverse_proxy /_synapse/client/* http://[localhost_IP]:8008
+}
+
+######
+# 1) Replace all "[]" with said server specific details.
+# 2) This also includes a static website config for /var/www/public_html but 
+#      you can place the static html/css files anywhere.
+######
