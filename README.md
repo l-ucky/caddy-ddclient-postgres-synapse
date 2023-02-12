@@ -1,2 +1,2 @@
 # cappy-synapse
-Caddy v2 Configuration for Synapse .wellknown and Reverse Proxy
+ddclient, Caddy v2 Configuration for Synapse .wellknown and Reverse Proxy
