@@ -8,13 +8,13 @@
 
 ## The first call means to kill the Synapse server.
 
-##The second call means to use the config (-c) at the specified directory, and run as daemon (-D).
+## The second call means to use the config (-c) at the specified directory, and run as daemon (-D).
 
 ## Any time you change configurations, kill and start in this fashion.
 
-## After installing, go to `/etc/synapse/homeserver.yaml` and paste this file
+## After installing, go to `/etc/synapse/homeserver.yaml` and paste this file.
 
-```
+
 ########################### STANDARD NOTES ######################################
 # Configuration file for Synapse.
 #
